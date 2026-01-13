@@ -1,0 +1,35 @@
+name: Build and Push Docker Image
+
+# Когда запускать? При каждом пуше в ветку main
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest  # Робот работает на Ubuntu
+
+    steps:
+      # 1. Скачиваем твой код
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # 2. Логинимся в Docker Hub (используя секреты)
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # 3. Настраиваем Docker Buildx (ускоритель сборки)
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      # 4. Собираем и пушим образ
+      - name: Build and push
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          # ВАЖНО: Замени на свой ник/репозиторий!
+          tags: orleantum/my-python-app:latest
