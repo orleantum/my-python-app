@@ -1,0 +1,55 @@
+services:
+  
+  python-app:
+    build: .
+    restart: always
+    environment:
+      # Передаем переменные из .env файла внутрь контейнера
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - .:/app
+    depends_on:
+      - postgres-db
+
+  # Наша новая база данных
+  postgres-db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      # Postgres требует эти переменные для создания базы при первом старте
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    # Порты можно не открывать, если мы не ходим в базу снаружи
+    ports:
+      - "5433:5432"
+
+  # Админка для базы данных (чтобы смотреть глазами)
+  pgadmin:
+    image: dpage/pgadmin4
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: root
+    ports:
+      - "5050:80"  # Откроем на порту 5050
+    depends_on:
+      - postgres-db
+
+  nginx-frontend:
+    image: nginx:latest
+    restart: always
+    # Аналог флага -p (Порты), если нужно
+    ports:
+      - "8080:80" # Открываем порт 8080 наружу
+    volumes:
+      # Пробрасываем нашу папку html внутрь Nginx
+      - ./html:/usr/share/nginx/html
+
+volumes:
+  pg-data:
